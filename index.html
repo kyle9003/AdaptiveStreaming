@@ -1,0 +1,120 @@
+<!-- <!DOCTYPE html> -->
+<html>
+	<head>
+		<title>Adaptive Streaming</title>
+		  <link href="http://vjs.zencdn.net/6.4.0/video-js.css" rel="stylesheet">
+		  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+		  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+</head>
+
+	  <!-- If you'd like to support IE8 -->
+<!-- 	  <script src="http://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script>
+	</head>
+	<body>
+	  <video id="my-video" class="video-js" controls preload="auto" width="640" height="264"
+	  poster="./img/completed.png" data-setup="{}">
+	    <source src="./video/big_buck_bunny.mp4" type='video/mp4'>
+	    <source src="MY_VIDEO.webm" type='video/webm'>
+	    <p class="vjs-no-js">
+	      To view this video please enable JavaScript, and consider upgrading to a web browser that
+	      <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+	    </p>
+	  </video>
+
+	  <script src="http://vjs.zencdn.net/6.4.0/video.js"></script> -->
+	  <body>
+	  	<script type="text/javascript">
+	  		window.addEventListener("load", Ready);
+
+			function Ready(){ 
+			    if(window.File && window.FileReader){ //These are the relevant HTML5 objects that we are going to use 
+			        document.getElementById('UploadButton').addEventListener('click', StartUpload);  
+			        document.getElementById('FileBox').addEventListener('change', FileChosen);
+			    }
+			    else
+			    {
+			        document.getElementById('UploadArea').innerHTML = "Your Browser Doesn't Support The File API Please Update Your Browser";
+			    }
+			}
+
+			var SelectedFile;
+			function FileChosen(evnt) {
+			    SelectedFile = evnt.target.files[0];
+			    console.log(SelectedFile);
+			    document.getElementById('NameBox').value = SelectedFile.name;
+			}
+
+			var socket = io.connect('http://localhost:8080');
+			var FReader;
+			var Name;
+			function StartUpload(){
+			    if(document.getElementById('FileBox').value != "")
+			    {
+			        FReader = new FileReader();
+			        Name = document.getElementById('NameBox').value;
+			        var Content = "<span id='NameArea'>Uploading " + SelectedFile.name + " as " + Name + "</span>";
+			        Content += '<div id="ProgressContainer"><div id="ProgressBar"></div></div><span id="percent">0%</span>';
+			        Content += "<span id='Uploaded'> - <span id='MB'>0</span>/" + Math.round(SelectedFile.size / 1048576) + "MB</span>";
+			        document.getElementById('UploadArea').innerHTML = Content;
+			        FReader.onload = function(evnt){
+			            socket.emit('Upload', { 'Name' : Name, Data : evnt.target.result });
+			        }
+			        socket.emit('Start', { 'Name' : Name, 'Size' : SelectedFile.size });
+			    }
+			    else
+			    {
+			        alert("Please Select A File");
+			    }
+			}
+
+			socket.on('MoreData', function (data){
+				console.log("more data " + data);
+			    UpdateBar(data['Percent']);
+			    var Place = data['Place'] * 524288; //The Next Blocks Starting Position
+			    var NewFile; //The Variable that will hold the new Block of Data
+			    if(SelectedFile.webkitSlice) 
+			        NewFile = SelectedFile.webkitSlice(Place, Place + Math.min(524288, (SelectedFile.size-Place)));
+			        // NewFile = SelectedFile.webkitSlice(Place, Place + Math.min(524288, (SelectedFile.size-Place)));
+			    else
+			        NewFile = SelectedFile.slice(Place, Place + Math.min(524288, (SelectedFile.size-Place)));
+			        // NewFile = SelectedFile.mozSlice(Place, Place + Math.min(524288, (SelectedFile.size-Place)));
+			    FReader.readAsBinaryString(NewFile);
+			});
+			 
+			function UpdateBar(percent){
+			    document.getElementById('ProgressBar').style.width = percent + '%';
+			    document.getElementById('percent').innerHTML = (Math.round(percent*100)/100) + '%';
+			    var MBDone = Math.round(((percent/100.0) * SelectedFile.size) / 1048576);
+			    document.getElementById('MB').innerHTML = MBDone;
+			}
+
+			    var Path = "http://localhost:8080/";
+			    // var Path = "C:/Users/kmoran/Documents/Code/AdaptiveStreaming";
+			    // console.log(__dirname);
+ 
+		    socket.on('Done', function (data){
+			    console.log("done"+ Path + " - " + data['Image']);
+		        var Content = "Video Successfully Uploaded !!"
+		        Content += "<img id='Thumb' src='" + Path + data['Image'] + "' alt='" + Name + "'><br>";
+		        Content += "<button  type='button' name='Upload' value='' id='Restart' class='Button'>Upload Another</button>";
+		        document.getElementById('UploadArea').innerHTML = Content;
+		        document.getElementById('Restart').addEventListener('click', Refresh);
+		        // socket.emit('Delete', {'Name' : Name});
+		    });
+
+			    function Refresh(){
+			        location.reload(true);
+			    }
+
+	  	</script>
+	      <div id="UploadBox">
+	        <h2>Video Uploader</h2>
+	        <span id='UploadArea'>
+	            <label for="FileBox">Choose A File: </label><input type="file" id="FileBox"><br>
+	            <label for="NameBox">Name: </label><input type="text" id="NameBox"><br>
+	 
+	            <button  type='button' id='UploadButton' class='Button'>Upload</button>
+	        </span>
+	    </div>
+	</body>
+</html>
