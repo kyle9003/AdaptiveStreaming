@@ -5,7 +5,9 @@
   "main": "app.js",
   "dependencies": {
     "express": "^4.16.2",
+    "express-handlebars-boilerplate": "^1.2.2",
     "node-delete": "^0.1.2",
+    "path": "^0.12.7",
     "socket.io": "^2.0.4"
   },
   "devDependencies": {},

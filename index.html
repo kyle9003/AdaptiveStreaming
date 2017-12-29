@@ -93,9 +93,10 @@
 			    // console.log(__dirname);
  
 		    socket.on('Done', function (data){
-			    console.log("done"+ Path + " - " + data['Image']);
-		        var Content = "Video Successfully Uploaded !!"
+		    	console.log(data['Image']);
+		        var Content = "Video Successfully Uploaded !!<br>"
 		        Content += "<img id='Thumb' src='" + Path + data['Image'] + "' alt='" + Name + "'><br>";
+		        // Content += "<img id='Thumb' src='" + Path + data['Image'] + "' alt='" + Name + "'><br>";
 		        Content += "<button  type='button' name='Upload' value='' id='Restart' class='Button'>Upload Another</button>";
 		        document.getElementById('UploadArea').innerHTML = Content;
 		        document.getElementById('Restart').addEventListener('click', Refresh);
@@ -112,7 +113,7 @@
 	        <span id='UploadArea'>
 	            <label for="FileBox">Choose A File: </label><input type="file" id="FileBox"><br>
 	            <label for="NameBox">Name: </label><input type="text" id="NameBox"><br>
-	 
+	 			
 	            <button  type='button' id='UploadButton' class='Button'>Upload</button>
 	        </span>
 	    </div>

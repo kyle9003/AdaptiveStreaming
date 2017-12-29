@@ -1,29 +1,29 @@
-var app = require('http').createServer(handler)
-  , io = require('socket.io').listen(app)
+var app = require('express')()
+  , server = require('http').Server(app)
+  , io = require('socket.io').listen(server)
   , fs = require('fs')
   , exec = require('child_process').exec
   , util = require('util')
   , stream = require('stream')
   , del = require('node-delete')
   , express = require('express')
+  , path = require('path')
  
-app.listen(8080);
-console.log("listening");
+server.listen(8080, () => {
+  console.log('listening on port 8080');
+});
+
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/index.html');
+});
+
+app.use(express.static(path.join(__dirname, 'video')));
+
  
-function handler (req, res) {
-  var stream = fs.createReadStream(__dirname + '/index.html');
-  stream.pipe(res);
-
-  // fs.readFile(__dirname + '/index.html', function (err, data) {
-  //   if (err) {
-  //     res.writeHead(500);
-  //     return res.end('Error loading index.html');
-  //   }
-  //   res.writeHead(200);
-  //   res.end(data);
-  // });
-
-}
+// function handler (req, res) {
+//   var stream = fs.createReadStream(__dirname + '/index.html');
+//   stream.pipe(res);
+// }
  
 var Files = {};
 
@@ -74,7 +74,7 @@ io.sockets.on('connection', function (socket) {
                   fs.closeSync(Files[Name]['Handler']);
                   fs.unlink("Temp/" + Name, function (err, ){
                     exec("ffmpeg -n -i Video/" + Name  + " -ss 00:30 -r 1 -an -vframes 1 -f mjpeg Video/" + Name  + ".jpg", function(err){
-                        socket.emit('Done', {'Image' : 'Video/' + Name + '.jpg'});
+                        socket.emit('Done', {'Image' :  Name + '.jpg'});
                       });
                   });  
                 }); 
